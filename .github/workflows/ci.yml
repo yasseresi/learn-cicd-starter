@@ -6,7 +6,7 @@ on:
 
 jobs:
   tests:
-    name: go test
+    name: Test
     runs-on: ubuntu-latest
 
     steps:
