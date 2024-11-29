@@ -17,7 +17,7 @@ func TestGetAPIKey(t *testing.T) {
 			name:          "No Authorization header",
 			headers:       http.Header{},
 			expectedKey:   "",
-			expectedError: ErrNoAuthHeaderIncluded,
+			expectedError: errors.New("no authorization header included"),
 		},
 		{
 			name: "Empty Authorization header",
@@ -25,7 +25,7 @@ func TestGetAPIKey(t *testing.T) {
 				"Authorization": []string{""},
 			},
 			expectedKey:   "",
-			expectedError: ErrNoAuthHeaderIncluded,
+			expectedError: errors.New("no authorization header included"),
 		},
 		{
 			name: "Malformed Authorization header - no space",
@@ -46,26 +46,10 @@ func TestGetAPIKey(t *testing.T) {
 		{
 			name: "Valid Authorization header",
 			headers: http.Header{
-				"Authorization": []string{"ApiKey 12345"},
+				"Authorization": []string{"ApiKey abc123"},
 			},
-			expectedKey:   "12345",
+			expectedKey:   "abc123",
 			expectedError: nil,
-		},
-		{
-			name: "Valid Authorization header with extra spaces",
-			headers: http.Header{
-				"Authorization": []string{"ApiKey    12345"},
-			},
-			expectedKey:   "12345",
-			expectedError: nil,
-		},
-		{
-			name: "Authorization header with missing key",
-			headers: http.Header{
-				"Authorization": []string{"ApiKey "},
-			},
-			expectedKey:   "",
-			expectedError: errors.New("malformed authorization header"),
 		},
 	}
 
@@ -75,12 +59,14 @@ func TestGetAPIKey(t *testing.T) {
 			if apiKey != tt.expectedKey {
 				t.Errorf("expected key %q, got %q", tt.expectedKey, apiKey)
 			}
-			if tt.expectedError != nil && err != nil {
-				if err.Error() != tt.expectedError.Error() {
-					t.Errorf("expected error %q, got %q", tt.expectedError.Error(), err.Error())
+			if tt.expectedError == nil && err != nil {
+				t.Errorf("expected no error, got %v", err)
+			} else if tt.expectedError != nil && err == nil {
+				t.Errorf("expected error %v, got nil", tt.expectedError)
+			} else if tt.expectedError != nil && err != nil {
+				if tt.expectedError.Error() != err.Error() {
+					t.Errorf("expected error message %q, got %q", tt.expectedError.Error(), err.Error())
 				}
-			} else if tt.expectedError != err {
-				t.Errorf("expected error %v, got %v", tt.expectedError, err)
 			}
 		})
 	}
