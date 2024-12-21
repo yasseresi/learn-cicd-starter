@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -14,14 +15,25 @@ import (
 )
 
 func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
+	if r.Body == nil {
+		respondWithError(w, http.StatusBadRequest, "Empty request body")
+		return
+	}
+
 	type parameters struct {
 		Name string `json:"name"`
 	}
 	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
 	params := parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters")
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	if params.Name == "" {
+		respondWithError(w, http.StatusBadRequest, "Name is required")
 		return
 	}
 
@@ -61,14 +73,13 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 }
 
 func generateRandomSHA256Hash() (string, error) {
-	randomBytes := make([]byte, 32)
-	_, err := rand.Read(randomBytes)
-	if err != nil {
-		return "", err
+	const keyLength = 32
+	randomBytes := make([]byte, keyLength)
+	if _, err := rand.Read(randomBytes); err != nil {
+		return "", fmt.Errorf("failed to generate random bytes: %w", err)
 	}
 	hash := sha256.Sum256(randomBytes)
-	hashString := hex.EncodeToString(hash[:])
-	return hashString, nil
+	return hex.EncodeToString(hash[:]), nil
 }
 
 func (cfg *apiConfig) handlerUsersGet(w http.ResponseWriter, r *http.Request, user database.User) {
