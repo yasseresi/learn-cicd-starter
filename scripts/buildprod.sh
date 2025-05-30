@@ -19,7 +19,6 @@ gcloud auth configure-docker us-central1-docker.pkg.dev
 
 # Build and push Docker image
 echo "🐳 Building and pushing Docker image..."
-docker build -t us-central1-docker.pkg.dev/notely-461315/notely-ar-repo/notely:latest .
-docker push us-central1-docker.pkg.dev/notely-461315/notely-ar-repo/notely:latest
+gcloud builds submit --tag us-central1-docker.pkg.dev/notely-461315/notely-ar-repo/notely:latest .
 
 echo "✅ Build and deploy completed."
